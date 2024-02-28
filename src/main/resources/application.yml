@@ -1,0 +1,18 @@
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: ENC(Sn/WpJJlv4lQ4sBBzGtWY5gtDtvduua1SKzxKKuAkk15IHbbQcOwxkPd0pEB5brT)
+    username: ENC(l4+lye3+LNsUCBsIiNd+9w==)
+    password: ENC(oH7obOf46iksttxkAZnkRQ==)
+  data:
+    redis:
+      port: 6379
+      url: redis://localhost
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: create
+    properties:
+      hibernate:
+        format_sql: true
+    open-in-view: false
