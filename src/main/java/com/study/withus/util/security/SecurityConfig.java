@@ -16,8 +16,8 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -28,9 +28,10 @@ import org.springframework.security.web.authentication.AbstractAuthenticationPro
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.session.ConcurrentSessionControlAuthenticationStrategy;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
-import org.springframework.session.data.redis.RedisSessionRepository;
+import org.springframework.session.data.redis.RedisIndexedSessionRepository;
+import org.springframework.session.security.SpringSessionBackedSessionRegistry;
 
 @Configuration
 @RequiredArgsConstructor
@@ -38,6 +39,7 @@ import org.springframework.session.data.redis.RedisSessionRepository;
 public class SecurityConfig {
     private final UserRepository userRepository;
     private final ObjectMapper objectMapper;
+    private final RedisIndexedSessionRepository redisSessionRepository;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -47,7 +49,9 @@ public class SecurityConfig {
         http.httpBasic(basic -> basic.disable());
         http.httpBasic(basic -> basic.disable());
         http.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
-                .maximumSessions(1));
+                .maximumSessions(1)
+                .maxSessionsPreventsLogin(true)
+                .sessionRegistry(sessionRegistry()));
         http.authorizeHttpRequests(req -> req.requestMatchers("/main","/login","/signup","/api/v1/signup","/favicon.*").permitAll()
                 .requestMatchers("/api/v1/user/**").hasRole("USER")
                 .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
@@ -77,7 +81,13 @@ public class SecurityConfig {
         loginAuthenticationFilter.setAuthenticationFailureHandler(authenticationFailureHandler());
         loginAuthenticationFilter.setAuthenticationSuccessHandler(authenticationSuccessHandler());
         loginAuthenticationFilter.setSecurityContextRepository(new HttpSessionSecurityContextRepository());
+        loginAuthenticationFilter.setSessionAuthenticationStrategy(new ConcurrentSessionControlAuthenticationStrategy(sessionRegistry()));
         return loginAuthenticationFilter;
+    }
+
+    @Bean
+    public SessionRegistry sessionRegistry() {
+        return new SpringSessionBackedSessionRegistry<>(redisSessionRepository);
     }
 
     @Bean

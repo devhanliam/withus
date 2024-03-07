@@ -5,10 +5,12 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
+import org.springframework.session.data.redis.config.ConfigureRedisAction;
 import org.springframework.session.data.redis.config.annotation.web.http.EnableRedisHttpSession;
+import org.springframework.session.data.redis.config.annotation.web.http.EnableRedisIndexedHttpSession;
 
 @Configuration
-@EnableRedisHttpSession(redisNamespace = "withus:session")
+@EnableRedisIndexedHttpSession(redisNamespace = "withus:session")
 public class LettuceConfig {
 
     @Value("${spring.data.redis.url}")
@@ -20,4 +22,11 @@ public class LettuceConfig {
     public RedisConnectionFactory redisConnectionFactory() {
         return new LettuceConnectionFactory(url,port);
     }
+
+    @Bean
+    public ConfigureRedisAction configureRedisAction() {
+        return ConfigureRedisAction.NO_OP;
+    }
+
+
 }
