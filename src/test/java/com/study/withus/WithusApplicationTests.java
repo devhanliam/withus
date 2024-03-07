@@ -15,7 +15,6 @@ class WithusApplicationTests extends JasyptConfig {
         String encryptKey = System.getProperty("jasypt.encryptor.password");
         StandardPBEStringEncryptor encryptor = new StandardPBEStringEncryptor();
         encryptor.setPassword(encryptKey);
-
     }
 
 }
