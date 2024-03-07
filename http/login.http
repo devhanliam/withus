@@ -1,0 +1,25 @@
+### 로그인
+POST http://localhost:8080/login
+Content-Type: application/json
+
+{
+  "loginId" : "asd",
+  "password" : "asd1234!"
+
+}
+
+### 회원가입
+POST http://localhost:8080/api/v1/signup
+Content-Type: application/json
+
+{
+  "loginId" : "asd",
+  "password" : "asd1234!",
+  "username" : "asd"
+}
+
+### 권한테스트
+GET http://localhost:8080/api/v1/user/test
+
+### 로그아웃
+GET http://localhost:8080/logout
