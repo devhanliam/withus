@@ -7,19 +7,23 @@ import com.study.withus.util.security.hanlder.LoginAuthenticationFailureHandler;
 import com.study.withus.util.security.filter.LoginAuthenticationFilter;
 import com.study.withus.util.security.hanlder.LoginAuthenticationSuccessHandler;
 import com.study.withus.util.security.hanlder.UnauthorizedHandler;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.MediaType;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchyImpl;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.codec.Utf8;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
@@ -29,13 +33,15 @@ import org.springframework.security.web.authentication.AuthenticationFailureHand
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.session.ConcurrentSessionControlAuthenticationStrategy;
+import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
+import org.springframework.session.FlushMode;
 import org.springframework.session.data.redis.RedisIndexedSessionRepository;
 import org.springframework.session.security.SpringSessionBackedSessionRegistry;
 
 @Configuration
 @RequiredArgsConstructor
-//@EnableWebSecurity(debug = true)
+@EnableWebSecurity
 public class SecurityConfig {
     private final UserRepository userRepository;
     private final ObjectMapper objectMapper;
@@ -47,11 +53,19 @@ public class SecurityConfig {
         http.cors(cors -> cors.disable());
         http.formLogin(form -> form.disable());
         http.httpBasic(basic -> basic.disable());
-        http.httpBasic(basic -> basic.disable());
-        http.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
-                .maximumSessions(1)
-                .maxSessionsPreventsLogin(true)
-                .sessionRegistry(sessionRegistry()));
+        http.sessionManagement(session -> session
+                .sessionConcurrency(concurrency -> concurrency
+                        .sessionRegistry(sessionRegistry())
+                        .maximumSessions(1)
+                        .maxSessionsPreventsLogin(true)
+                        .expiredSessionStrategy(event -> {
+                            HttpServletResponse response = event.getResponse();
+                            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                            response.setCharacterEncoding("UTF-8");
+                            objectMapper.writeValue(response.getWriter(),"세션이 만료되었거나 다른곳에서 로그인 되었습니다");
+                        })
+                )
+                .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED));
         http.authorizeHttpRequests(req -> req.requestMatchers("/main","/login","/signup","/api/v1/signup","/favicon.*").permitAll()
                 .requestMatchers("/api/v1/user/**").hasRole("USER")
                 .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
@@ -65,7 +79,7 @@ public class SecurityConfig {
                 .logoutSuccessHandler((request,response,authentication)->{}));
         http.exceptionHandling(ex -> ex.accessDeniedHandler(accessDeniedHandler())
                 .authenticationEntryPoint(authenticationEntryPoint()));
-        http.addFilterAt(loginAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
+        http.addFilterAt(loginAuthenticationFilter(http), UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
 
@@ -74,14 +88,12 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
-    @Bean
-    public AbstractAuthenticationProcessingFilter loginAuthenticationFilter() {
-        LoginAuthenticationFilter loginAuthenticationFilter = new LoginAuthenticationFilter("/login", objectMapper);
+    public AbstractAuthenticationProcessingFilter loginAuthenticationFilter(HttpSecurity httpSecurity) {
+        LoginAuthenticationFilter loginAuthenticationFilter = new LoginAuthenticationFilter("/login", objectMapper,httpSecurity);
         loginAuthenticationFilter.setAuthenticationManager(authenticationManager());
         loginAuthenticationFilter.setAuthenticationFailureHandler(authenticationFailureHandler());
         loginAuthenticationFilter.setAuthenticationSuccessHandler(authenticationSuccessHandler());
         loginAuthenticationFilter.setSecurityContextRepository(new HttpSessionSecurityContextRepository());
-        loginAuthenticationFilter.setSessionAuthenticationStrategy(new ConcurrentSessionControlAuthenticationStrategy(sessionRegistry()));
         return loginAuthenticationFilter;
     }
 
