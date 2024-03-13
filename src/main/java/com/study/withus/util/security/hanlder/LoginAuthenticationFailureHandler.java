@@ -25,6 +25,7 @@ public class LoginAuthenticationFailureHandler implements AuthenticationFailureH
         if (exception instanceof BadCredentialsException) {
             msg = "가입되지않은 회원이거나 아이디와 비밀번호가 옳지않습니다";
         }
+
         log.info("로그인 실패 :  {} ", msg);
         ErrorResponse errorResponse = new ErrorResponse(msg, response);
         objectMapper.writeValue(response.getWriter(), errorResponse);

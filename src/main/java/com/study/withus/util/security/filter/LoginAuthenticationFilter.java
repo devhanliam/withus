@@ -13,6 +13,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.AbstractAuthenticationProcessingFilter;
 import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
+import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 import java.io.IOException;
@@ -21,23 +22,16 @@ public class LoginAuthenticationFilter extends AbstractAuthenticationProcessingF
 
     private final ObjectMapper objectMapper;
     private static final String CONTENT_TYPE = "application/json";
-    private final HttpSecurity httpSecurity;
-    private static boolean IS_CHANGE_SESSION_AUTHENTICATION_STRATEGY = false;
-    public LoginAuthenticationFilter(String defaultFilterProcessesUrl, ObjectMapper objectMapper, HttpSecurity httpSecurity) {
+    public LoginAuthenticationFilter(String defaultFilterProcessesUrl, ObjectMapper objectMapper) {
         super(new AntPathRequestMatcher(defaultFilterProcessesUrl, HttpMethod.POST.name()));
         this.objectMapper = objectMapper;
-        this.httpSecurity = httpSecurity;
     }
 
     @Override
     public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException, IOException, ServletException {
+
         if (request.getContentType() == null || !request.getContentType().equals(CONTENT_TYPE)) {
             throw new AuthenticationServiceException("인증 지원하지않는 Content-Type : " + request.getContentType());
-        }
-
-        if (!IS_CHANGE_SESSION_AUTHENTICATION_STRATEGY && httpSecurity.getSharedObject(SessionAuthenticationStrategy.class) != null) {
-            IS_CHANGE_SESSION_AUTHENTICATION_STRATEGY = true;
-            setSessionAuthenticationStrategy(httpSecurity.getSharedObject(SessionAuthenticationStrategy.class));
         }
         LoginRequestDto loginRequestDto = objectMapper.readValue(request.getInputStream(), LoginRequestDto.class);
         return this.getAuthenticationManager().authenticate(unAuthenticatedToken(loginRequestDto));
