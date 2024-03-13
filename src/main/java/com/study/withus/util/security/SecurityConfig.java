@@ -9,9 +9,11 @@ import com.study.withus.util.security.hanlder.LoginAuthenticationSuccessHandler;
 import com.study.withus.util.security.hanlder.UnauthorizedHandler;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.aspectj.weaver.bcel.BcelGenericSignatureToTypeXConverter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.MediaType;
+import org.springframework.scheduling.config.ScheduledTaskRegistrar;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchyImpl;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -23,7 +25,6 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.codec.Utf8;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
@@ -32,10 +33,6 @@ import org.springframework.security.web.authentication.AbstractAuthenticationPro
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.web.authentication.session.ConcurrentSessionControlAuthenticationStrategy;
-import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
-import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
-import org.springframework.session.FlushMode;
 import org.springframework.session.data.redis.RedisIndexedSessionRepository;
 import org.springframework.session.security.SpringSessionBackedSessionRegistry;
 
@@ -49,10 +46,12 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http.csrf(csrf -> csrf.disable());
-        http.cors(cors -> cors.disable());
-        http.formLogin(form -> form.disable());
-        http.httpBasic(basic -> basic.disable());
+        http
+            .csrf(csrf -> csrf.disable())
+            .cors(cors -> cors.disable());
+        http
+            .formLogin(form -> form.disable())
+            .httpBasic(basic -> basic.disable());
         http.sessionManagement(session -> session
                 .sessionConcurrency(concurrency -> concurrency
                         .sessionRegistry(sessionRegistry())
@@ -79,7 +78,11 @@ public class SecurityConfig {
                 .logoutSuccessHandler((request,response,authentication)->{}));
         http.exceptionHandling(ex -> ex.accessDeniedHandler(accessDeniedHandler())
                 .authenticationEntryPoint(authenticationEntryPoint()));
-        http.addFilterAt(loginAuthenticationFilter(http), UsernamePasswordAuthenticationFilter.class);
+        http.with(LoginFilterConfigurer.loginFilterConfigurer(), dsl -> dsl
+                .successHandler(authenticationSuccessHandler())
+                .failureHandler(authenticationFailureHandler())
+                .authenticationManager(authenticationManager())
+                .objectMapper(objectMapper));
         return http.build();
     }
 
@@ -88,17 +91,9 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
-    public AbstractAuthenticationProcessingFilter loginAuthenticationFilter(HttpSecurity httpSecurity) {
-        LoginAuthenticationFilter loginAuthenticationFilter = new LoginAuthenticationFilter("/login", objectMapper,httpSecurity);
-        loginAuthenticationFilter.setAuthenticationManager(authenticationManager());
-        loginAuthenticationFilter.setAuthenticationFailureHandler(authenticationFailureHandler());
-        loginAuthenticationFilter.setAuthenticationSuccessHandler(authenticationSuccessHandler());
-        loginAuthenticationFilter.setSecurityContextRepository(new HttpSessionSecurityContextRepository());
-        return loginAuthenticationFilter;
-    }
-
     @Bean
     public SessionRegistry sessionRegistry() {
+//        redisSessionRepository.setCleanupCron(ScheduledTaskRegistrar.CRON_DISABLED);
         return new SpringSessionBackedSessionRegistry<>(redisSessionRepository);
     }
 
