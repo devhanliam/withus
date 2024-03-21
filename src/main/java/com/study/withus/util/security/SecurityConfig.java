@@ -1,19 +1,17 @@
 package com.study.withus.util.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.study.withus.user.infra.repository.UserRepository;
+import com.study.withus.user.infra.persistence.repository.UserJpaRepository;
+import com.study.withus.user.service.port.UserRepository;
 import com.study.withus.util.security.hanlder.ForbiddenHandler;
 import com.study.withus.util.security.hanlder.LoginAuthenticationFailureHandler;
-import com.study.withus.util.security.filter.LoginAuthenticationFilter;
 import com.study.withus.util.security.hanlder.LoginAuthenticationSuccessHandler;
 import com.study.withus.util.security.hanlder.UnauthorizedHandler;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.aspectj.weaver.bcel.BcelGenericSignatureToTypeXConverter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.MediaType;
-import org.springframework.scheduling.config.ScheduledTaskRegistrar;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchyImpl;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -29,10 +27,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
-import org.springframework.security.web.authentication.AbstractAuthenticationProcessingFilter;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.session.data.redis.RedisIndexedSessionRepository;
 import org.springframework.session.security.SpringSessionBackedSessionRegistry;
 
@@ -40,7 +36,7 @@ import org.springframework.session.security.SpringSessionBackedSessionRegistry;
 @RequiredArgsConstructor
 @EnableWebSecurity
 public class SecurityConfig {
-    private final UserRepository userRepository;
+    private final UserRepository userJpaRepository;
     private final ObjectMapper objectMapper;
     private final RedisIndexedSessionRepository redisSessionRepository;
 
@@ -50,8 +46,13 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .cors(cors -> cors.disable());
         http
-            .formLogin(form -> form.disable())
-            .httpBasic(basic -> basic.disable());
+            .httpBasic(basic -> basic.disable())
+            .formLogin(form -> form
+                    .loginPage("/login")
+                    .usernameParameter("loginId")
+                    .passwordParameter("password")
+                    .successHandler(authenticationSuccessHandler())
+                    .failureHandler(authenticationFailureHandler()));
         http.sessionManagement(session -> session
                 .sessionConcurrency(concurrency -> concurrency
                         .sessionRegistry(sessionRegistry())
@@ -65,7 +66,8 @@ public class SecurityConfig {
                         })
                 )
                 .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED));
-        http.authorizeHttpRequests(req -> req.requestMatchers("/main","/login","/signup","/api/v1/signup","/favicon.*").permitAll()
+        http.authorizeHttpRequests(req -> req
+                .requestMatchers("/user/main","/login","/signup","/api/v1/user/create","/8bitchar.png","/favicon.*").permitAll()
                 .requestMatchers("/api/v1/user/**").hasRole("USER")
                 .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                 .requestMatchers("/user/**").hasRole("USER")
@@ -78,11 +80,11 @@ public class SecurityConfig {
                 .logoutSuccessHandler((request,response,authentication)->{}));
         http.exceptionHandling(ex -> ex.accessDeniedHandler(accessDeniedHandler())
                 .authenticationEntryPoint(authenticationEntryPoint()));
-        http.with(LoginFilterConfigurer.loginFilterConfigurer(), dsl -> dsl
-                .successHandler(authenticationSuccessHandler())
-                .failureHandler(authenticationFailureHandler())
-                .authenticationManager(authenticationManager())
-                .objectMapper(objectMapper));
+//        http.with(LoginFilterConfigurer.loginFilterConfigurer(), dsl -> dsl
+//                .successHandler(authenticationSuccessHandler())
+//                .failureHandler(authenticationFailureHandler())
+//                .authenticationManager(authenticationManager())
+//                .objectMapper(objectMapper));
         return http.build();
     }
 
@@ -99,7 +101,7 @@ public class SecurityConfig {
 
     @Bean
     public UserDetailsService userDetailsService() {
-        return new SecurityUserDetailService(userRepository);
+        return new SecurityUserDetailService(userJpaRepository);
     }
 
     @Bean

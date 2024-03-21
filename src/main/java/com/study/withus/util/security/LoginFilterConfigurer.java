@@ -14,6 +14,7 @@ import org.springframework.security.web.authentication.session.ConcurrentSession
 import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
 import org.springframework.security.web.context.SecurityContextRepository;
 
+@Deprecated
 public class LoginFilterConfigurer extends AbstractHttpConfigurer<LoginFilterConfigurer, HttpSecurity> {
     private  AuthenticationSuccessHandler successHandler;
     private  AuthenticationFailureHandler failureHandler;
