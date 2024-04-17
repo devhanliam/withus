@@ -1,9 +1,7 @@
 package com.study.withus.util.security;
 
-import com.study.withus.user.domain.User;
-import com.study.withus.user.infra.persistence.entity.UserEntity;
-import com.study.withus.user.infra.persistence.repository.UserJpaRepository;
-import com.study.withus.user.service.port.UserRepository;
+import com.study.withus.user.domain.entity.User;
+import com.study.withus.user.domain.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
