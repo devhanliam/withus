@@ -1,8 +1,7 @@
 package com.study.withus.util.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.study.withus.user.infra.persistence.repository.UserJpaRepository;
-import com.study.withus.user.service.port.UserRepository;
+import com.study.withus.user.domain.repository.UserRepository;
 import com.study.withus.util.security.hanlder.ForbiddenHandler;
 import com.study.withus.util.security.hanlder.LoginAuthenticationFailureHandler;
 import com.study.withus.util.security.hanlder.LoginAuthenticationSuccessHandler;
@@ -11,6 +10,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchyImpl;
@@ -29,6 +30,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.session.data.redis.RedisIndexedSessionRepository;
 import org.springframework.session.security.SpringSessionBackedSessionRegistry;
 
@@ -43,9 +45,6 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(csrf -> csrf.disable())
-            .cors(cors -> cors.disable());
-        http
             .httpBasic(basic -> basic.disable())
             .formLogin(form -> form
                     .loginPage("/login")
@@ -57,7 +56,7 @@ public class SecurityConfig {
                 .sessionConcurrency(concurrency -> concurrency
                         .sessionRegistry(sessionRegistry())
                         .maximumSessions(1)
-                        .maxSessionsPreventsLogin(true)
+                        .maxSessionsPreventsLogin(false)
                         .expiredSessionStrategy(event -> {
                             HttpServletResponse response = event.getResponse();
                             response.setContentType(MediaType.APPLICATION_JSON_VALUE);
@@ -67,7 +66,8 @@ public class SecurityConfig {
                 )
                 .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED));
         http.authorizeHttpRequests(req -> req
-                .requestMatchers("/user/main","/login","/signup","/api/v1/user/create","/8bitchar.png","/favicon.*").permitAll()
+                .requestMatchers(HttpMethod.POST,"/api/v1/user").permitAll()
+                .requestMatchers("/","/user/main","/login","/signup","/8bitchar.png","/favicon.*").permitAll()
                 .requestMatchers("/api/v1/user/**").hasRole("USER")
                 .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                 .requestMatchers("/user/**").hasRole("USER")
@@ -80,11 +80,6 @@ public class SecurityConfig {
                 .logoutSuccessHandler((request,response,authentication)->{}));
         http.exceptionHandling(ex -> ex.accessDeniedHandler(accessDeniedHandler())
                 .authenticationEntryPoint(authenticationEntryPoint()));
-//        http.with(LoginFilterConfigurer.loginFilterConfigurer(), dsl -> dsl
-//                .successHandler(authenticationSuccessHandler())
-//                .failureHandler(authenticationFailureHandler())
-//                .authenticationManager(authenticationManager())
-//                .objectMapper(objectMapper));
         return http.build();
     }
 

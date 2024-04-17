@@ -22,7 +22,6 @@ public class LoginAuthenticationSuccessHandler implements AuthenticationSuccessH
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
         Map<String,String> data = new HashMap<>();
         data.put("loginId", authentication.getName());
-//        SecurityContextHolder.getContext().setAuthentication(authentication);
         SuccessResponse successResponse = new SuccessResponse(data, response);
         objectMapper.writeValue(response.getWriter(), successResponse);
     }
