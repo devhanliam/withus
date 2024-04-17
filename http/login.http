@@ -1,21 +1,28 @@
 ### 로그인
 POST http://localhost:8080/login
-Content-Type: application/json
+Content-Type: application/x-www-form-urlencoded
 
-{
-  "loginId" : "asd",
-  "password" : "asd1234!"
+loginId=asd&password=asd1234!
 
-}
 
 ### 회원가입
-POST http://localhost:8080/api/v1/signup
+POST http://localhost:8080/api/v1/user/create
 Content-Type: application/json
 
 {
   "loginId" : "asd",
   "password" : "asd1234!",
   "username" : "asd"
+}
+
+### 회원가입 실패
+POST http://localhost:8080/api/v1/user/create
+Content-Type: application/json
+
+{
+  "loginId" : "",
+  "password" : "",
+  "username" : ""
 }
 
 ### 권한테스트

@@ -1,90 +1,88 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" xmlns:th="https://www.thymeleaf.org">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Login</title>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-<link rel="shortcut icon" href="http://localhost:8080/favicon.ico" type="image/x-icon">
-<link rel="icon" href="http://localhost:8080/favicon.ico" type="image/x-icon">
-  <style>
-    .navbar {
-      background-color: #1E40AF;
-      color: white;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" href="http://localhost:8080/favicon.ico" type="image/x-icon">
+    <link rel="icon" href="http://localhost:8080/favicon.ico" type="image/x-icon">
+    <title>로그인</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.11"></script>
+    <style>
+        @font-face {
+            font-family: 'DungGeunMo-Regular';
+            src: url('https://cdn.jsdelivr.net/gh/wooin21/web/fonts/etc/DungGeunMo-Regular.woff');
+            font-weight: normal;
+            font-style: normal;
+        }
+
+        body {
+            font-family: 'DungGeunMo-Regular';
+        }
+    </style>
 </head>
 <body>
-<nav class="navbar p-4 flex justify-center">
-  <span class="text-xl font-bold">Withus</span>
-</nav>
-<div class="container mx-auto mt-10 flex justify-center">
-  <form id="loginForm" class="w-1/3">
-<!--    <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}"/>-->
-    <div class="mb-4">
-      <label class="block text-gray-700 text-sm font-bold mb-2" for="loginId">
-        아이디
-      </label>
-      <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="loginId" name="loginId" type="text" placeholder="아이디">
+<div class="flex min-h-full flex-col justify-center px-6 py-12 lg:px-8">
+    <div class="sm:mx-auto sm:w-full sm:max-w-sm">
+        <img class="mx-auto h-10 w-auto" src="/8bitchar.png" alt="Your Company">
+        <h2 class="mt-10 text-center text-2xl font-bold leading-9 tracking-tight text-gray-900">로그인</h2>
     </div>
-    <div class="mb-6">
-      <label class="block text-gray-700 text-sm font-bold mb-2" for="password">
-        비밀번호
-      </label>
-      <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="password" name="password" type="password" placeholder="비밀번호">
+
+    <div class="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
+        <form class="space-y-6" th:action="@{/login}" method="POST">
+            <div>
+                <label for="loginId" class="block text-sm font-medium leading-6 text-gray-900">아이디</label>
+                <div class="mt-2">
+                    <input id="loginId" name="loginId" type="text" required class="block w-full rounded-md border-0 px-1.5 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                </div>
+            </div>
+
+            <div>
+                <div class="flex items-center justify-between">
+                    <label for="password" class="block text-sm font-medium leading-6 text-gray-900">비밀번호</label>
+                    <div class="text-sm">
+                        <a href="" class="font-semibold text-indigo-600 hover:text-indigo-500">비밀번호를 잊으셨나요?</a>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <input id="password" name="password" type="password" autocomplete="current-password" required class="block w-full rounded-md border-0 px-1.5 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                </div>
+            </div>
+
+            <div>
+                <button hx-post="/login" type="submit" class="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">로그인</button>
+            </div>
+        </form>
+
+        <p class="mt-10 text-center text-sm text-gray-500">
+            회원이 아니신가요?
+            <a th:href="@{/signup}" class="font-semibold leading-6 text-indigo-600 hover:text-indigo-500">무료로 회원가입하기</a>
+        </p>
     </div>
-    <div class="flex items-center justify-between">
-      <button id="loginBtn" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" type="button">
-        로그인
-      </button>
-      <button id="signupBtn" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" type="button">
-        회원가입
-      </button>
-    </div>
-  </form>
 </div>
-
 <script>
-
-  document.getElementById('loginBtn').addEventListener('click', function() {
-    let loginId = document.getElementById('loginId').value;
-    let password = document.getElementById('password').value;
-    let formData = new FormData();
-    let data = {
-        "loginId" : loginId,
-        "password" : password
-    }
-    formData.append('loginId', loginId);
-    formData.append('password', password);
-    fetch('http://localhost:8080/login', {
-      method: 'POST',
-        headers : {"Content-Type" : "application/json"},
-      body: JSON.stringify(Object.fromEntries(formData))
-    })
-            .then(response => {
-                console.log(response);
-                if (!response.ok) {
-                    // 만약 응답이 오류인 경우
-                    return response.json().then(errorData => {
-                        console.log(errorData)
-                        // 오류 데이터를 JSON으로 변환하여 처리합니다.
-                        throw new Error(errorData.content || 'Server Error');
-                    });
-                }else {
-                    // location.href = "http://localhost:8080/user/main";
-                    alert("로그인 성공");
-                }
-            })
-            .catch(error => {
-                console.log(error);
-              alert(error);
-            });
-  });
-
-  document.getElementById('signupBtn').addEventListener('click', function() {
-    location.href="http://localhost:8080/signup"
-
-  });
+    document.addEventListener('htmx:afterRequest', function(evt) {
+        console.log(evt);
+        if(evt.detail.xhr.status != 200){
+            let parse = JSON.parse(evt.detail.xhr.response);
+            /* Notify the user of a 404 Not Found response */
+            return alert(parse.content);
+        }
+        if (evt.detail.successful != true) {
+            /* Notify of an unexpected error, & print error to console */
+            alert("Unexpected Error");
+            return console.error(evt);
+        }
+        // if (evt.detail.target.id == 'info-div') {
+            /* Execute code on the target of the HTMX request, which will
+            be either the hx-target attribute if set, or the triggering
+            element itself if not set. */
+            // let infoDiv = document.getElementById('info-div');
+            // infoDiv.style.backgroundColor = '#000000';  // black background
+            // infoDiv.style.color = '#FFFFFF';  // white text
+        // }
+    });
 </script>
 </body>
+
 </html>
